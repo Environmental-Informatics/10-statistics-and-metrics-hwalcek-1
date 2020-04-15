@@ -8,6 +8,19 @@
 # https://github.com/Environmental-Informatics/assignment-10.git for more
 # details about the assignment.
 #
+"""Due April 10, 2020
+Created on Tue Apr 07 14:18:40 2020
+by Hannah Walcek
+Assignment 10 - Descriptive Statistics and Environmental Metrics
+
+This program uses two text files WildcatCreek_Discharge_03335000_19540601-20200315.txt
+and TippecanoeRiver_Discharge_03331500_19431001-20200315.txt. It cleans the
+data and calculates various metrics including Tqmean, Richards-Baker Flashiness Index,
+seven day low flow, and instances of 3x median for both monthly and annual
+periods. The result is four files of monthly metrics, annual metrics, monthly averages,
+and annual averages for both rivers.
+"""
+
 import pandas as pd
 import scipy.stats as stats
 import numpy as np
@@ -46,6 +59,7 @@ def ClipData( DataDF, startDate, endDate ):
     of dates. Function returns the clipped dataframe and and the number of 
     missing values."""
     
+    # clip data to whatever time span
     DataDF = DataDF.loc[startDate:endDate]
     return( DataDF, MissingValues )
 
@@ -147,14 +161,16 @@ def GetAnnualStatistics(DataDF):
     annual values for each water year.  Water year, as defined by the USGS,
     starts on October 1."""
     
+    # name columns
     annual_columns = ['Mean Flow', 'Peak Flow', 'Median Flow', 'Coeff Var', 'Skew', 'Tqmean', 'R-B Index', '7Q', '3xMedian']
     WYDataDF = pd.DataFrame(columns = annual_columns)
     
+    # calculations for columns using water year
     WYDataDF['Mean Flow'] = DataDF['Discharge'].resample("AS-OCT").mean()
     WYDataDF['Peak Flow'] = DataDF['Discharge'].resample("AS-OCT").max()
     WYDataDF['Median Flow'] = DataDF['Discharge'].resample("AS-OCT").median()
     WYDataDF['Coeff Var'] = (DataDF['Discharge'].resample("AS-OCT").std()/WYDataDF['Mean Flow']) *100
-    WYDataDF['Skew'] = stats.skew(DataDF['Discharge'].resample("AS-OCT"))
+    WYDataDF['Skew'] = DataDF['Discharge'].resample("AS-OCT").apply(stats.skew)
     WYDataDF['Tqmean'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcTqmean)
     WYDataDF['R-B Index'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcRBindex)
     WYDataDF['7Q'] = DataDF['Discharge'].resample("AS-OCT").apply(Calc7Q)
@@ -165,8 +181,11 @@ def GetMonthlyStatistics(DataDF):
     """This function calculates monthly descriptive statistics and metrics 
     for the given streamflow time series.  Values are returned as a dataframe
     of monthly values for each year."""
-
+    
+    # name columns
     monthly_columns = ['Mean Flow', 'Coeff Var', 'Tqmean', 'R-B Index']
+    
+    # calculations for columns
     MoDataDF = pd.DataFrame(columns = monthly_columns)
     
     MoDataDF['Mean Flow'] = DataDF['Discharge'].resample("M").mean()
@@ -181,6 +200,7 @@ def GetAnnualAverages(WYDataDF):
     metrics.  The routine returns an array of mean values for each metric
     in the original dataframe."""
     
+    # average annual dataframe
     AnnualAverages = WYDataDF.mean(axis = 0)
     
     return( AnnualAverages )
@@ -190,10 +210,12 @@ def GetMonthlyAverages(MoDataDF):
     statistics and metrics.  The routine returns an array of mean values 
     for each metric in the original dataframe."""
     
+    # average monthly dataframe
     MonthlyAverages = MoDataDF.mean(axis = 0)
     
     return( MonthlyAverages )
-    
+
+# calculate monthly and annual stats for Wildcat
 DataDF, MissingValues = ReadData("WildcatCreek_Discharge_03335000_19540601-20200315.txt")
 DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
 Wildcat_WYDataDF = GetAnnualStatistics(DataDF)
@@ -201,7 +223,7 @@ Wildcat_WYDataDF = Wildcat_WYDataDF.assign(Station = 'Wildcat')
 Wildcat_MoDataDF = GetMonthlyStatistics(DataDF)
 Wildcat_MoDataDF = Wildcat_MoDataDF.assign(Station = 'Wildcat')
 
-
+# calculate monthly and annual stats for Tippe
 DataDF, MissingValues = ReadData("TippecanoeRiver_Discharge_03331500_19431001-20200315.txt")
 DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
 Tippe_WYDataDF = GetAnnualStatistics(DataDF)
@@ -209,16 +231,17 @@ Tippe_WYDataDF = Tippe_WYDataDF.assign(Station = 'Tippe')
 Tippe_MoDataDF = GetMonthlyStatistics(DataDF)
 Tippe_MoDataDF = Tippe_MoDataDF.assign(Station = 'Tippe')
 
-
+# create Annual_Metrics.csv
 Annual_Metrics = Wildcat_WYDataDF
 Annual_Metrics = Annual_Metrics.append(Tippe_WYDataDF)
 Annual_Metrics.to_csv('Annual_Metrics.csv', sep="\t", index =True)
 
+# create Monthly_Metrics.csv
 Monthly_Metrics = Wildcat_MoDataDF
 Monthly_Metrics = Monthly_Metrics.append(Tippe_MoDataDF)
 Monthly_Metrics.to_csv('Monthly_Metrics.csv', sep="\t", index=True)
 
-
+# calculate annual averages for both rivers
 Wildcat_AnnualAverages = GetAnnualAverages(Wildcat_WYDataDF)
 Wildcat_AnnualAverages = Wildcat_AnnualAverages.to_frame()
 Wildcat_AnnualAverages = Wildcat_AnnualAverages.transpose()
@@ -228,10 +251,12 @@ Tippe_AnnualAverages = Tippe_AnnualAverages.to_frame()
 Tippe_AnnualAverages = Tippe_AnnualAverages.transpose()
 Tippe_AnnualAverages = Tippe_AnnualAverages.assign(Station = 'Tippe')
 
+# create Average_Annual_Metrics.txt
 Average_Annual_Metrics = Wildcat_AnnualAverages
 Average_Annual_Metrics = Average_Annual_Metrics.append(Tippe_AnnualAverages)
 Average_Annual_Metrics.to_csv('Average_Annual_Metrics.txt', sep = "\t", index = None)
 
+# calculate monthly averages for both rivers
 Wildcat_MonthlyAverages = GetMonthlyAverages(Wildcat_MoDataDF)
 Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.to_frame()
 Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.transpose()
@@ -241,6 +266,7 @@ Tippe_MonthlyAverages = Tippe_MonthlyAverages.to_frame()
 Tippe_MonthlyAverages = Tippe_MonthlyAverages.transpose()
 Tippe_MonthlyAverages = Tippe_MonthlyAverages.assign(Station = 'Tippe')
 
+# create Average_Monthly_Metrics.txt
 Average_Monthly_Metrics = Wildcat_MonthlyAverages
 Average_Monthly_Metrics = Average_Monthly_Metrics.append(Tippe_MonthlyAverages)
 Average_Monthly_Metrics.to_csv('Average_Monthly_Metrics.txt', sep = "\t", index = None)
