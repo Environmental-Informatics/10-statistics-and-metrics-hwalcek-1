@@ -163,7 +163,7 @@ def GetAnnualStatistics(DataDF):
     starts on October 1."""
     
     # name columns
-    annual_columns = ['Mean Flow', 'Peak Flow', 'Median Flow', 'Coeff Var', 'Skew', 'Tqmean', 'R-B Index', '7Q', '3xMedian']
+    annual_columns = ['Mean Flow', 'Peak Flow', 'Median', 'Coeff Var', 'Skew', 'TQmean', 'R-B Index', '7Q', '3xMedian']
     WYDataDF = pd.DataFrame(columns = annual_columns)
     
     # calculations for columns using water year
@@ -184,7 +184,7 @@ def GetMonthlyStatistics(DataDF):
     of monthly values for each year."""
     
     # name columns
-    monthly_columns = ['Mean Flow', 'Coeff Var', 'Tqmean', 'R-B Index']
+    monthly_columns = ['Mean Flow', 'Coeff Var', 'TQmean', 'R-B Index']
     
     # calculations for columns
     MoDataDF = pd.DataFrame(columns = monthly_columns)
