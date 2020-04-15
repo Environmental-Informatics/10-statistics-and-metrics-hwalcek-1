@@ -211,8 +211,10 @@ def GetMonthlyAverages(MoDataDF):
     for each metric in the original dataframe."""
     
     # average monthly dataframe
-    MonthlyAverages = MoDataDF.mean(axis = 0)
-    
+    MonthlyAverages = MoDataDF
+    MonthlyAverages['Month'] = MonthlyAverages.index.month 
+    MonthlyAverages = MoDataDF.groupby('Month').mean()
+   
     return( MonthlyAverages )
 
 # calculate monthly and annual stats for Wildcat
@@ -258,12 +260,8 @@ Average_Annual_Metrics.to_csv('Average_Annual_Metrics.txt', sep = "\t", index = 
 
 # calculate monthly averages for both rivers
 Wildcat_MonthlyAverages = GetMonthlyAverages(Wildcat_MoDataDF)
-Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.to_frame()
-Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.transpose()
 Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.assign(Station = 'Wildcat')
 Tippe_MonthlyAverages = GetMonthlyAverages(Tippe_MoDataDF)
-Tippe_MonthlyAverages = Tippe_MonthlyAverages.to_frame()
-Tippe_MonthlyAverages = Tippe_MonthlyAverages.transpose()
 Tippe_MonthlyAverages = Tippe_MonthlyAverages.assign(Station = 'Tippe')
 
 # create Average_Monthly_Metrics.txt
