@@ -61,6 +61,7 @@ def ClipData( DataDF, startDate, endDate ):
     
     # clip data to whatever time span
     DataDF = DataDF.loc[startDate:endDate]
+    MissingValues = DataDF["Discharge"].isna().sum()
     return( DataDF, MissingValues )
 
 def CalcTqmean(Qvalues):
