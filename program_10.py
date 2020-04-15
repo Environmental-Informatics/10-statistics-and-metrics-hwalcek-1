@@ -12,8 +12,6 @@ import pandas as pd
 import scipy.stats as stats
 import numpy as np
 
-fileName = "TippecanoeRiver_Discharge_03331500_19431001-20200315.txt"
-
 def ReadData( fileName ):
     """This function takes a filename as input, and returns a dataframe with
     raw data read from that file in a Pandas DataFrame.  The DataFrame index
