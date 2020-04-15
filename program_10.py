@@ -212,8 +212,8 @@ def GetMonthlyAverages(MoDataDF):
     
     # average monthly dataframe
     MonthlyAverages = MoDataDF
-    MonthlyAverages['Date'] = MonthlyAverages.index.month 
-    MonthlyAverages = MoDataDF.groupby('Date').mean()
+    MonthlyAverages['Month'] = MonthlyAverages.index.month 
+    MonthlyAverages = MoDataDF.groupby('Month').mean()
    
     return( MonthlyAverages )
 
