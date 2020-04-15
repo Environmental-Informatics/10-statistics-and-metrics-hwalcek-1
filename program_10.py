@@ -35,10 +35,12 @@ def ReadData( fileName ):
                          na_values=['Eqp'])
     DataDF = DataDF.set_index('Date')
     
+    # remove negative values
+    DataDF.loc[~(DataDF['Discharge']>0), 'Discharge'] = np.nan
+    
     # quantify the number of missing values
     MissingValues = DataDF["Discharge"].isna().sum()
-    
-    
+       
     return( DataDF, MissingValues )
 
 def ClipData( DataDF, startDate, endDate ):
@@ -46,6 +48,7 @@ def ClipData( DataDF, startDate, endDate ):
     of dates. Function returns the clipped dataframe and and the number of 
     missing values."""
     
+    DataDF = DataDF.loc[startDate:endDate]
     return( DataDF, MissingValues )
 
 def CalcTqmean(Qvalues):
@@ -56,6 +59,21 @@ def CalcTqmean(Qvalues):
        duration rather than the volume of streamflow. The routine returns
        the Tqmean value for the given data array."""
     
+    # drop nan values
+    drop_Tqmean = Qvalues.dropna()
+    
+    # find mean of array
+    mean_streamflow = np.mean(drop_Tqmean)
+    
+    # create array of values greater than mean
+    exceed = drop_Tqmean[drop_Tqmean>mean_streamflow]
+    
+    # find fraction unless drop_Tqmean is 0
+    if len(drop_Tqmean) == 0:
+        Tqmean = np.nan
+    else:
+        Tqmean = len(exceed)/len(drop_Tqmean)
+        
     return ( Tqmean )
 
 def CalcRBindex(Qvalues):
@@ -67,6 +85,23 @@ def CalcRBindex(Qvalues):
        (pathlength) by total discharge volumes for each year. The
        routine returns the RBindex value for the given data array."""
     
+    # drop nan values
+    drop_RBindex = Qvalues.dropna()
+    
+    # calculate flowchange
+    flowchange = drop_RBindex.diff()
+    flowchange = flowchange.dropna()
+    
+    # calculate absolute value of flowchange
+    abstQ = abs(flowchange)
+    total_flowchange = abstQ.sum()
+    
+    # sum of flowchange
+    total = drop_RBindex.sum()
+    
+    # caluclate RBindex
+    RBindex = total_flowchange/total
+        
     return ( RBindex )
 
 def Calc7Q(Qvalues):
@@ -78,6 +113,12 @@ def Calc7Q(Qvalues):
        that year.  The routine returns the 7Q (7-day low flow) value
        for the given data array."""
     
+    # drop nan values
+    drop_7Q = Qvalues.dropna()
+    
+    # use rolling mean to find lowest average flow with 7 day window
+    val7Q = drop_7Q.rolling(window=7).mean().min()
+    
     return ( val7Q )
 
 def CalcExceed3TimesMedian(Qvalues):
@@ -88,6 +129,18 @@ def CalcExceed3TimesMedian(Qvalues):
        3 times that value.   The routine returns the count of events greater 
        than 3 times the median annual flow value for the given data array."""
     
+    # drop nan values
+    drop_median3x = Qvalues.dropna()
+    
+    # find median of array
+    mean_streamflow = np.median(drop_median3x)
+    
+    # create array of values greater than mean
+    greater = drop_median3x[drop_median3x>(3*mean_streamflow)]
+    
+    # find fraction
+    median3x = len(greater)
+    
     return ( median3x )
 
 def GetAnnualStatistics(DataDF):
@@ -96,6 +149,18 @@ def GetAnnualStatistics(DataDF):
     annual values for each water year.  Water year, as defined by the USGS,
     starts on October 1."""
     
+    annual_columns = ['Mean Flow', 'Peak Flow', 'Median Flow', 'Coeff Var', 'Skew', 'Tqmean', 'R-B Index', '7Q', '3xMedian']
+    WYDataDF = pd.DataFrame(columns = annual_columns)
+    
+    WYDataDF['Mean Flow'] = DataDF['Discharge'].resample("AS-OCT").mean()
+    WYDataDF['Peak Flow'] = DataDF['Discharge'].resample("AS-OCT").max()
+    WYDataDF['Median Flow'] = DataDF['Discharge'].resample("AS-OCT").median()
+    WYDataDF['Coeff Var'] = (DataDF['Discharge'].resample("AS-OCT").std()/WYDataDF['Mean Flow']) *100
+    WYDataDF['Skew'] = stats.skew(DataDF['Discharge'].resample("AS-OCT"))
+    WYDataDF['Tqmean'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcTqmean)
+    WYDataDF['R-B Index'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcRBindex)
+    WYDataDF['7Q'] = DataDF['Discharge'].resample("AS-OCT").apply(Calc7Q)
+    WYDataDF['3xMedian'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcExceed3TimesMedian)
     return ( WYDataDF )
 
 def GetMonthlyStatistics(DataDF):
@@ -103,12 +168,22 @@ def GetMonthlyStatistics(DataDF):
     for the given streamflow time series.  Values are returned as a dataframe
     of monthly values for each year."""
 
+    monthly_columns = ['Mean Flow', 'Coeff Var', 'Tqmean', 'R-B Index']
+    MoDataDF = pd.DataFrame(columns = monthly_columns)
+    
+    MoDataDF['Mean Flow'] = DataDF['Discharge'].resample("M").mean()
+    MoDataDF['Coeff Var'] = DataDF['Discharge'].resample("M").std()/MoDataDF['Mean Flow']*100
+    MoDataDF['Tqmean'] = DataDF['Discharge'].resample("M").apply(CalcTqmean)
+    MoDataDF['R-B Index'] = DataDF['Discharge'].resample("M").apply(CalcRBindex)
+    
     return ( MoDataDF )
 
 def GetAnnualAverages(WYDataDF):
     """This function calculates annual average values for all statistics and
     metrics.  The routine returns an array of mean values for each metric
     in the original dataframe."""
+    
+    AnnualAverages = WYDataDF.mean(axis = 0)
     
     return( AnnualAverages )
 
@@ -117,7 +192,61 @@ def GetMonthlyAverages(MoDataDF):
     statistics and metrics.  The routine returns an array of mean values 
     for each metric in the original dataframe."""
     
+    MonthlyAverages = MoDataDF.mean(axis = 0)
+    
     return( MonthlyAverages )
+    
+DataDF, MissingValues = ReadData("WildcatCreek_Discharge_03335000_19540601-20200315.txt")
+DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
+Wildcat_WYDataDF = GetAnnualStatistics(DataDF)
+Wildcat_WYDataDF = Wildcat_WYDataDF.assign(Station = 'Wildcat')
+Wildcat_MoDataDF = GetMonthlyStatistics(DataDF)
+Wildcat_MoDataDF = Wildcat_MoDataDF.assign(Station = 'Wildcat')
+
+
+DataDF, MissingValues = ReadData("TippecanoeRiver_Discharge_03331500_19431001-20200315.txt")
+DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
+Tippe_WYDataDF = GetAnnualStatistics(DataDF)
+Tippe_WYDataDF = Tippe_WYDataDF.assign(Station = 'Tippe')
+Tippe_MoDataDF = GetMonthlyStatistics(DataDF)
+Tippe_MoDataDF = Tippe_MoDataDF.assign(Station = 'Tippe')
+
+
+Annual_Metrics = Wildcat_WYDataDF
+Annual_Metrics = Annual_Metrics.append(Tippe_WYDataDF)
+Annual_Metrics.to_csv('Annual_Metrics.csv', sep="\t", index =True)
+
+Monthly_Metrics = Wildcat_MoDataDF
+Monthly_Metrics = Monthly_Metrics.append(Tippe_MoDataDF)
+Monthly_Metrics.to_csv('Monthly_Metrics.csv', sep="\t", index=True)
+
+
+Wildcat_AnnualAverages = GetAnnualAverages(Wildcat_WYDataDF)
+Wildcat_AnnualAverages = Wildcat_AnnualAverages.to_frame()
+Wildcat_AnnualAverages = Wildcat_AnnualAverages.transpose()
+Wildcat_AnnualAverages = Wildcat_AnnualAverages.assign(Station = 'Wildcat')
+Tippe_AnnualAverages = GetAnnualAverages(Tippe_WYDataDF)
+Tippe_AnnualAverages = Tippe_AnnualAverages.to_frame()
+Tippe_AnnualAverages = Tippe_AnnualAverages.transpose()
+Tippe_AnnualAverages = Tippe_AnnualAverages.assign(Station = 'Tippe')
+
+Average_Annual_Metrics = Wildcat_AnnualAverages
+Average_Annual_Metrics = Average_Annual_Metrics.append(Tippe_AnnualAverages)
+Average_Annual_Metrics.to_csv('Average_Annual_Metrics.txt', sep = "\t", index = None)
+
+Wildcat_MonthlyAverages = GetMonthlyAverages(Wildcat_MoDataDF)
+Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.to_frame()
+Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.transpose()
+Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.assign(Station = 'Wildcat')
+Tippe_MonthlyAverages = GetMonthlyAverages(Tippe_MoDataDF)
+Tippe_MonthlyAverages = Tippe_MonthlyAverages.to_frame()
+Tippe_MonthlyAverages = Tippe_MonthlyAverages.transpose()
+Tippe_MonthlyAverages = Tippe_MonthlyAverages.assign(Station = 'Tippe')
+
+Average_Monthly_Metrics = Wildcat_MonthlyAverages
+Average_Monthly_Metrics = Average_Monthly_Metrics.append(Tippe_MonthlyAverages)
+Average_Monthly_Metrics.to_csv('Average_Monthly_Metrics.txt', sep = "\t", index = None)
+
 
 # the following condition checks whether we are running as a script, in which 
 # case run the test code, otherwise functions are being imported so do not.
