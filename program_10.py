@@ -163,16 +163,16 @@ def GetAnnualStatistics(DataDF):
     starts on October 1."""
     
     # name columns
-    annual_columns = ['Mean Flow', 'Peak Flow', 'Median Flow', 'Coeff Var', 'Skew', 'Tqmean', 'R-B Index', '7Q', '3xMedian']
+    annual_columns = ['Mean Flow', 'Peak Flow', 'Median', 'Coeff Var', 'Skew', 'TQmean', 'R-B Index', '7Q', '3xMedian']
     WYDataDF = pd.DataFrame(columns = annual_columns)
     
     # calculations for columns using water year
     WYDataDF['Mean Flow'] = DataDF['Discharge'].resample("AS-OCT").mean()
     WYDataDF['Peak Flow'] = DataDF['Discharge'].resample("AS-OCT").max()
-    WYDataDF['Median Flow'] = DataDF['Discharge'].resample("AS-OCT").median()
+    WYDataDF['Median'] = DataDF['Discharge'].resample("AS-OCT").median()
     WYDataDF['Coeff Var'] = (DataDF['Discharge'].resample("AS-OCT").std()/WYDataDF['Mean Flow']) *100
     WYDataDF['Skew'] = DataDF['Discharge'].resample("AS-OCT").apply(stats.skew)
-    WYDataDF['Tqmean'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcTqmean)
+    WYDataDF['TQmean'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcTqmean)
     WYDataDF['R-B Index'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcRBindex)
     WYDataDF['7Q'] = DataDF['Discharge'].resample("AS-OCT").apply(Calc7Q)
     WYDataDF['3xMedian'] = DataDF['Discharge'].resample("AS-OCT").apply(CalcExceed3TimesMedian)
@@ -184,14 +184,14 @@ def GetMonthlyStatistics(DataDF):
     of monthly values for each year."""
     
     # name columns
-    monthly_columns = ['Mean Flow', 'Coeff Var', 'Tqmean', 'R-B Index']
+    monthly_columns = ['Mean Flow', 'Coeff Var', 'TQmean', 'R-B Index']
     
     # calculations for columns
     MoDataDF = pd.DataFrame(columns = monthly_columns)
     
     MoDataDF['Mean Flow'] = DataDF['Discharge'].resample("M").mean()
     MoDataDF['Coeff Var'] = DataDF['Discharge'].resample("M").std()/MoDataDF['Mean Flow']*100
-    MoDataDF['Tqmean'] = DataDF['Discharge'].resample("M").apply(CalcTqmean)
+    MoDataDF['TQmean'] = DataDF['Discharge'].resample("M").apply(CalcTqmean)
     MoDataDF['R-B Index'] = DataDF['Discharge'].resample("M").apply(CalcRBindex)
     
     return ( MoDataDF )
