@@ -51,7 +51,7 @@ def ReadData( fileName ):
     
     # quantify the number of missing values
     MissingValues = DataDF["Discharge"].isna().sum()
-       
+    
     return( DataDF, MissingValues )
 
 def ClipData( DataDF, startDate, endDate ):
@@ -163,10 +163,11 @@ def GetAnnualStatistics(DataDF):
     starts on October 1."""
     
     # name columns
-    annual_columns = ['Mean Flow', 'Peak Flow', 'Median Flow', 'Coeff Var', 'Skew', 'Tqmean', 'R-B Index', '7Q', '3xMedian']
+    annual_columns = ['site_no', 'Mean Flow', 'Peak Flow', 'Median Flow', 'Coeff Var', 'Skew', 'Tqmean', 'R-B Index', '7Q', '3xMedian']
     WYDataDF = pd.DataFrame(columns = annual_columns)
     
     # calculations for columns using water year
+    WYDataDF['site_no'] = DataDF['site_no'].resample("AS-OCT").mean()
     WYDataDF['Mean Flow'] = DataDF['Discharge'].resample("AS-OCT").mean()
     WYDataDF['Peak Flow'] = DataDF['Discharge'].resample("AS-OCT").max()
     WYDataDF['Median Flow'] = DataDF['Discharge'].resample("AS-OCT").median()
@@ -184,11 +185,12 @@ def GetMonthlyStatistics(DataDF):
     of monthly values for each year."""
     
     # name columns
-    monthly_columns = ['Mean Flow', 'Coeff Var', 'Tqmean', 'R-B Index']
+    monthly_columns = ['site_no', 'Mean Flow', 'Coeff Var', 'Tqmean', 'R-B Index']
     
     # calculations for columns
     MoDataDF = pd.DataFrame(columns = monthly_columns)
     
+    MoDataDF['site_no'] = DataDF['site_no'].resample("M").mean()
     MoDataDF['Mean Flow'] = DataDF['Discharge'].resample("M").mean()
     MoDataDF['Coeff Var'] = DataDF['Discharge'].resample("M").std()/MoDataDF['Mean Flow']*100
     MoDataDF['Tqmean'] = DataDF['Discharge'].resample("M").apply(CalcTqmean)
