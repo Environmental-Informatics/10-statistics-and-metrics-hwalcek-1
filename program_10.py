@@ -220,57 +220,7 @@ def GetMonthlyAverages(MoDataDF):
    
     return( MonthlyAverages )
 
-# calculate monthly and annual stats for Wildcat
-DataDF, MissingValues = ReadData("WildcatCreek_Discharge_03335000_19540601-20200315.txt")
-DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
-Wildcat_WYDataDF = GetAnnualStatistics(DataDF)
-Wildcat_WYDataDF = Wildcat_WYDataDF.assign(Station = 'Wildcat')
-Wildcat_MoDataDF = GetMonthlyStatistics(DataDF)
-Wildcat_MoDataDF = Wildcat_MoDataDF.assign(Station = 'Wildcat')
 
-# calculate monthly and annual stats for Tippe
-DataDF, MissingValues = ReadData("TippecanoeRiver_Discharge_03331500_19431001-20200315.txt")
-DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
-Tippe_WYDataDF = GetAnnualStatistics(DataDF)
-Tippe_WYDataDF = Tippe_WYDataDF.assign(Station = 'Tippe')
-Tippe_MoDataDF = GetMonthlyStatistics(DataDF)
-Tippe_MoDataDF = Tippe_MoDataDF.assign(Station = 'Tippe')
-
-# create Annual_Metrics.csv
-Annual_Metrics = Wildcat_WYDataDF
-Annual_Metrics = Annual_Metrics.append(Tippe_WYDataDF)
-Annual_Metrics.to_csv('Annual_Metrics.csv', sep="\t", index =True)
-
-# create Monthly_Metrics.csv
-Monthly_Metrics = Wildcat_MoDataDF
-Monthly_Metrics = Monthly_Metrics.append(Tippe_MoDataDF)
-Monthly_Metrics.to_csv('Monthly_Metrics.csv', sep="\t", index=True)
-
-# calculate annual averages for both rivers
-Wildcat_AnnualAverages = GetAnnualAverages(Wildcat_WYDataDF)
-Wildcat_AnnualAverages = Wildcat_AnnualAverages.to_frame()
-Wildcat_AnnualAverages = Wildcat_AnnualAverages.transpose()
-Wildcat_AnnualAverages = Wildcat_AnnualAverages.assign(Station = 'Wildcat')
-Tippe_AnnualAverages = GetAnnualAverages(Tippe_WYDataDF)
-Tippe_AnnualAverages = Tippe_AnnualAverages.to_frame()
-Tippe_AnnualAverages = Tippe_AnnualAverages.transpose()
-Tippe_AnnualAverages = Tippe_AnnualAverages.assign(Station = 'Tippe')
-
-# create Average_Annual_Metrics.txt
-Average_Annual_Metrics = Wildcat_AnnualAverages
-Average_Annual_Metrics = Average_Annual_Metrics.append(Tippe_AnnualAverages)
-Average_Annual_Metrics.to_csv('Average_Annual_Metrics.txt', sep = "\t", index = None)
-
-# calculate monthly averages for both rivers
-Wildcat_MonthlyAverages = GetMonthlyAverages(Wildcat_MoDataDF)
-Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.assign(Station = 'Wildcat')
-Tippe_MonthlyAverages = GetMonthlyAverages(Tippe_MoDataDF)
-Tippe_MonthlyAverages = Tippe_MonthlyAverages.assign(Station = 'Tippe')
-
-# create Average_Monthly_Metrics.txt
-Average_Monthly_Metrics = Wildcat_MonthlyAverages
-Average_Monthly_Metrics = Average_Monthly_Metrics.append(Tippe_MonthlyAverages)
-Average_Monthly_Metrics.to_csv('Average_Monthly_Metrics.txt', sep = "\t", index = None)
 
 
 # the following condition checks whether we are running as a script, in which 
@@ -322,3 +272,54 @@ if __name__ == '__main__':
         
         print("-"*50, "\n\nSummary of monthly metrics...\n\n", MoDataDF[file].describe(), "\n\nAnnual Monthly Averages...\n\n", MonthlyAverages[file])
         
+    # calculate monthly and annual stats for Wildcat
+    DataDF, MissingValues = ReadData("WildcatCreek_Discharge_03335000_19540601-20200315.txt")
+    DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
+    Wildcat_WYDataDF = GetAnnualStatistics(DataDF)
+    Wildcat_WYDataDF = Wildcat_WYDataDF.assign(Station = 'Wildcat')
+    Wildcat_MoDataDF = GetMonthlyStatistics(DataDF)
+    Wildcat_MoDataDF = Wildcat_MoDataDF.assign(Station = 'Wildcat')
+    
+    # calculate monthly and annual stats for Tippe
+    DataDF, MissingValues = ReadData("TippecanoeRiver_Discharge_03331500_19431001-20200315.txt")
+    DataDF, MissingValues = ClipData(DataDF, '1969-10-01', '2019-09-30')
+    Tippe_WYDataDF = GetAnnualStatistics(DataDF)
+    Tippe_WYDataDF = Tippe_WYDataDF.assign(Station = 'Tippe')
+    Tippe_MoDataDF = GetMonthlyStatistics(DataDF)
+    Tippe_MoDataDF = Tippe_MoDataDF.assign(Station = 'Tippe')
+    
+    # create Annual_Metrics.csv
+    Annual_Metrics = Wildcat_WYDataDF
+    Annual_Metrics = Annual_Metrics.append(Tippe_WYDataDF)
+    Annual_Metrics.to_csv('Annual_Metrics.csv', sep="\t", index =True)
+    
+    # create Monthly_Metrics.csv
+    Monthly_Metrics = Wildcat_MoDataDF
+    Monthly_Metrics = Monthly_Metrics.append(Tippe_MoDataDF)
+    Monthly_Metrics.to_csv('Monthly_Metrics.csv', sep="\t", index=True)
+    
+    # calculate annual averages for both rivers
+    Wildcat_AnnualAverages = GetAnnualAverages(Wildcat_WYDataDF)
+    Wildcat_AnnualAverages = Wildcat_AnnualAverages.to_frame()
+    Wildcat_AnnualAverages = Wildcat_AnnualAverages.transpose()
+    Wildcat_AnnualAverages = Wildcat_AnnualAverages.assign(Station = 'Wildcat')
+    Tippe_AnnualAverages = GetAnnualAverages(Tippe_WYDataDF)
+    Tippe_AnnualAverages = Tippe_AnnualAverages.to_frame()
+    Tippe_AnnualAverages = Tippe_AnnualAverages.transpose()
+    Tippe_AnnualAverages = Tippe_AnnualAverages.assign(Station = 'Tippe')
+    
+    # create Average_Annual_Metrics.txt
+    Average_Annual_Metrics = Wildcat_AnnualAverages
+    Average_Annual_Metrics = Average_Annual_Metrics.append(Tippe_AnnualAverages)
+    Average_Annual_Metrics.to_csv('Average_Annual_Metrics.txt', sep = "\t", index = None)
+    
+    # calculate monthly averages for both rivers
+    Wildcat_MonthlyAverages = GetMonthlyAverages(Wildcat_MoDataDF)
+    Wildcat_MonthlyAverages = Wildcat_MonthlyAverages.assign(Station = 'Wildcat')
+    Tippe_MonthlyAverages = GetMonthlyAverages(Tippe_MoDataDF)
+    Tippe_MonthlyAverages = Tippe_MonthlyAverages.assign(Station = 'Tippe')
+    
+    # create Average_Monthly_Metrics.txt
+    Average_Monthly_Metrics = Wildcat_MonthlyAverages
+    Average_Monthly_Metrics = Average_Monthly_Metrics.append(Tippe_MonthlyAverages)
+    Average_Monthly_Metrics.to_csv('Average_Monthly_Metrics.txt', sep = "\t", index = None)
